@@ -1,8 +1,8 @@
 # Chatta
 
 Authors: 
-        -Sam Woodhead (sam@blueforge.xyz)
-        -Thomas Deadman
+        * Sam Woodhead (sam@blueforge.xyz)
+        * Thomas Deadman
 
 ## About
 Chatta is a simple application for friends to chat online
@@ -21,7 +21,8 @@ to connect to the chatroom
 ## Starting the server
 Run the command
 ```sh
-python client.py
+python server.py
 ```
 to begin hosting
+or simply click the file in a windows GUI if python file types are correctly setup
 
