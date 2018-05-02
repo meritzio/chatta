@@ -1,0 +1,7 @@
+{
+    "About1" : "This is the settings file for the chatta application, configure as appropriate",
+    "About2" : "Save your template to settings.json for active use of the settings",
+    "Host"   : "www.example.com",
+    "Port"   : "2050"
+}
+
