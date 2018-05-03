@@ -37,7 +37,11 @@ class ChattaSettings(object):
 
 class ChattaBase(object):
     """The common properties and functions between the server and client"""
-
+    
+    Ack       = 'ACK'
+    UserEntry = 'CHATTA'
+    EventLine = 'EVENTS'
+    BasicMsg  = 'MESSAGE'
 
     def __init__(self):
         self.settings = ChattaSettings()
