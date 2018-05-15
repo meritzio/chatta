@@ -16,9 +16,8 @@ class ChattaSettings(object):
         if not os.path.isfile(self.SettingsFileName):
             return
         
-        f = open(self.SettingsFileName, 'r')
-        data = f.read()
-        f.close()
+		with open(self.SettingsFileName, 'r') as f:
+			data = f.read()
         
         try:
             data = json.loads(data)
