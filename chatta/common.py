@@ -6,24 +6,24 @@ import securesocket
 class ChattaSettings(object):
     """Access the chatta settings"""
 
-    SettingsFileName = 'settings.json'
-    HostField = 'Host'
-    PortField = 'Port'
+    settings_file_name = 'settings.json'
+    host_field = 'Host'
+    port_field= 'Port'
 
     def __init__(self):
         self.host = None
         self.port = -1
 
-        if not os.path.isfile(self.SettingsFileName):
+        if not os.path.isfile(self.settings_file_name):
             return
 
-        with open(self.SettingsFileName, 'r') as f:
+        with open(self.settings_file_name, 'r') as f:
             data = f.read()
 
         try:
             data = json.loads(data)
-            self.host = str(data[self.HostField])
-            self.port = int(data[self.PortField])
+            self.host = str(data[self.host_field])
+            self.port = int(data[self.port_field])
         except JSONDecodeError:
             return
 
