@@ -53,13 +53,16 @@ class ChattaServer(common.ChattaBase):
                 msg = user.Receive()
                 if msg == 'exit': #TODO Example exit loop
                     break
-                else:
+                else: #Send message to group
                     print(msg)
+                    user.Event(msg) #TODO message user identification
+                    
             except Exception:
                 break
         
         print(str(user.addr) + "disconnected")
         user.EndSession()
+        self.RemoveUser(user)
         return
 
     def Run(self):

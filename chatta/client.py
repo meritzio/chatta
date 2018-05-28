@@ -1,5 +1,6 @@
 import uuid
 import common
+import socket
 import threading
 import traceback
 import securesocket
@@ -22,28 +23,20 @@ class ChattaClient(common.ChattaBase):
         """Receive a message`"""
         return self.socket.RecvSecure()
 
-    def StartTUI(self):
-        """Start the curses TUI"""
-        self.tui = curses.initscr()
-        curses.noecho()
-        curses.cbreak()
-        self.tui.keypad(True)
-        return
-
-    def EndTUI(self):
-        """End the curses TUI"""
-        if not self.tui: #If TUI not initialised
-            return
-        
-        curses.nocbreak()
-        self.tui.keypad(False)
-        curses.echo()
-        curses.endwin()
-        return
-
     def EventLoop(self):
         """The main event loop to render messages received from the server"""
         #TODO, Receive events and render the GUI
+        
+        try:
+            while True:
+                msg = self.msocket.RecvSecure()
+                
+                if msg > len(self.BasicMsg) and msg[0:len(self.BasicMsg)] == self.BasicMsg:
+                    self.tui.ExternalMessageAppend(msg[len(self.BasicMsg) + 1:]) #+1 for space separation
+                
+        except ValueError:
+            return
+
         return
 
     def Run(self):
@@ -57,7 +50,8 @@ class ChattaClient(common.ChattaBase):
         #TODO User initiation, getting chatroom state from server connection
         # User input loop, curses library GUI rendered chatroom
         try:
-            self.StartTUI()
+            self.tui = tui.UserTUI()
+            self.tui.Start()
             host = self.settings.host
             port = self.settings.port
             self.socket.Connect(host, port)
@@ -71,20 +65,21 @@ class ChattaClient(common.ChattaBase):
                 t = threading.Thread(target=self.EventLoop)
                 t.start()
                 
-                msg = ''
                 while True:
-                    key = self.tui.getch()
+                    key = self.tui.main_window.getch()
                     if key == 27:
                         self.socket.Close()
                         self.msocket.Close()
                         break #Break on escape key
-                    elif key == 10:
-                        self.tui.echochar(key) 
-                        self.Send(self.BasicMsg + ' ' + msg)
-                        msg = ''
+                    elif key == curses.KEY_ENTER or key == 10 or key == 13:
+                        self.Send(self.BasicMsg + ' ' + self.tui.GetMessage())
+                        self.tui.MessageClear()
+                    elif key == curses.KEY_RESIZE:
+                        self.tui.Redraw()
+                    elif key == curses.erasechar() or key == 8: # Note backspace value varation beween shells
+                        self.tui.MessageClearOne()
                     else:
-                        self.tui.echochar(key) 
-                        msg += chr(key)
+                        self.tui.MessageAppend(key) 
             
             else:
                 self.socket.Close()
@@ -92,7 +87,7 @@ class ChattaClient(common.ChattaBase):
         except Exception as e:
             traceback.print_exc(e)
         
-        self.EndTUI()
+        self.tui.End()
         return
 
 
@@ -100,8 +95,8 @@ def Main():
     """Entry point for the application"""
     
     try:
-        global curses
-        import curses
+        global tui, curses
+        import tui, curses
     except:
         print('No curses library is installed. Cannot use client without it!')
         return

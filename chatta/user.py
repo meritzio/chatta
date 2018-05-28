@@ -13,7 +13,9 @@ class ChattaUser(object):
     
     def Event(self, message):
         """Inform the users event loop"""
-        
+        self.sockLock.acquire()
+        self.msock.SendSecure(message)
+        self.sockLock.release()
         return
 
     def EndSession(self):
