@@ -45,7 +45,6 @@ class UserTUI(object):
         """Draw a received message onto the user board"""
         #TODO overflow prevention
         self.ext_messages.append(message)
-        print(message)
 
         lines = self.ExternalMessageLines()
         while lines > self.line_max:   
