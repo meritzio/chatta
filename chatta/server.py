@@ -57,7 +57,7 @@ class ChattaServer(common.ChattaBase):
                     try:
                         self.usrLock.acquire()
                         for other in self.users:
-                            other.Event(msg) #TODO message user identification
+                            other.Event(user, msg) #TODO message user identification
                     except Exception as e:
                         import traceback
                         traceback.print_exc(e)

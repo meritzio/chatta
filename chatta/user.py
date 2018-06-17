@@ -17,12 +17,12 @@ class ChattaUser(object):
         """Verify a message is of the type specified"""
         return len(message) > len(mType) and message[:len(mType)] == mType
 
-    def Event(self, message):
-        """Inform the users event loop"""
+    def Event(self, user, message):
+        """Inform the users event loop that a user just entered dtails"""
         self.sockLock.acquire()
         
         if self.IsEvent(ChattaBase.BasicMsg, message):
-            self.msock.SendSecure(ChattaBase.BasicMsg + ' ' + self.name + ': ' + message[len(ChattaBase.BasicMsg) + 1:])
+            self.msock.SendSecure(ChattaBase.BasicMsg + ' ' + user.name + ': ' + message[len(ChattaBase.BasicMsg) + 1:])
         
         self.sockLock.release()
         return
