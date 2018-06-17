@@ -54,8 +54,15 @@ class ChattaServer(common.ChattaBase):
                 if msg == 'exit': #TODO Example exit loop
                     break
                 else: #Send message to group
-                    print(msg)
-                    user.Event(msg) #TODO message user identification
+                    try:
+                        self.usrLock.acquire()
+                        for other in self.users:
+                            other.Event(msg) #TODO message user identification
+                    except Exception as e:
+                        import traceback
+                        traceback.print_exc(e)
+                    finally:
+                        self.usrLock.release()
                     
             except Exception:
                 break
@@ -93,11 +100,13 @@ class ChattaServer(common.ChattaBase):
                     if len(message) < max(len(self.EventLine), len(self.UserEntry)):
                         sock.Close()
                         continue
-                    
+
                     #Parse the GUID
                     if message[:len(self.UserEntry)] == self.UserEntry:
-                        guid = message[len(self.UserEntry) + 1:]
-                        user = ChattaUser(guid, sock, addr)
+                        args = message.split(' ')
+                        guid = args[1]
+                        username = args[2]
+                        user = ChattaUser(guid, username + '[' + guid[-4:] + ']', sock, addr)
                         self.AddUser(user)
                         sock.SendSecure(self.Ack)
                         t = threading.Thread(target=self.UserSession, args=(user,))
@@ -108,15 +117,15 @@ class ChattaServer(common.ChattaBase):
                         if user: user.SetEventSocket(sock)       #Match the socket
                     else:
                         sock.Close()
-                        
+
                 except KeyboardInterrupt:
                     print("Shutting down server (closing any connections...)")
                     return
-            
+
         except Exception as e:
             traceback.print_exc(e)
             return
-        
+
         return
 
 

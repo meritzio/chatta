@@ -1,3 +1,4 @@
+from builtins import input #py2 and py3 input support
 import uuid
 import common
 import socket
@@ -12,6 +13,7 @@ class ChattaClient(common.ChattaBase):
         """Construct a chatta client session"""
         common.ChattaBase.__init__(self)
         self.msocket = securesocket.SecureSocket() #Messaging socket
+        self.username = ''
         return
     
     def Send(self, message):
@@ -30,8 +32,7 @@ class ChattaClient(common.ChattaBase):
         try:
             while True:
                 msg = self.msocket.RecvSecure()
-                
-                if msg > len(self.BasicMsg) and msg[0:len(self.BasicMsg)] == self.BasicMsg:
+                if msg > len(self.BasicMsg) and msg[0:len(self.BasicMsg)] == self.BasicMsg: #Basic message command
                     self.tui.ExternalMessageAppend(msg[len(self.BasicMsg) + 1:]) #+1 for space separation
                 
         except ValueError:
@@ -69,6 +70,27 @@ class ChattaClient(common.ChattaBase):
                     continue
         return
 
+    def ValidUsername(self, value):
+        """Check a username is valid"""
+        if len(value) < 3: return False
+
+        for v in value:
+            if not v.isalpha() and not v.isdigit():
+                return False
+
+        return True
+
+    def Setup(self):
+        """Get valid username and other required auth from the user"""
+        
+        value = ''
+        while not self.ValidUsername(value):
+            value = input('Enter a username: ')
+            assert isinstance(value, str)
+        
+        self.username = value
+        return
+
     def Run(self):
         """Start the client application"""
         
@@ -86,7 +108,7 @@ class ChattaClient(common.ChattaBase):
             port = self.settings.port
             self.socket.Connect(host, port)
             guid = str(uuid.uuid4())
-            self.Send(self.UserEntry + ' ' + guid) #Inform of entry
+            self.Send(' '.join([self.UserEntry, guid, self.username])) #Inform of entry
             ack = self.Receive() #Wait for acknowledgment
             
             if ack == self.Ack:
@@ -115,6 +137,7 @@ def Main():
         return
     
     chatta = ChattaClient()
+    chatta.Setup()
     chatta.Run()
     return
 
