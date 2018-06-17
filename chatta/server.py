@@ -70,7 +70,7 @@ class ChattaServer(common.ChattaBase):
         
         if not self.settings.Valid():
             print('Invalid settings, check your configuration file "' + 
-                   common.ChattaSettings.SettingsFileName + '" and try again')
+                   common.ChattaSettings.settings_file_name + '" and try again')
             return
         
         try:

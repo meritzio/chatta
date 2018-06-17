@@ -1,4 +1,4 @@
 #!/bin/sh
 python setup.py develop
-pip install .
+python -m pip install .
 
