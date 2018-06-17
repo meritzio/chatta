@@ -2,6 +2,7 @@ import curses
 import curses.textpad
 
 class UserTUI(object):
+    """Responsible for drawing the client messages in a TUI format"""
 
     def __init__(self):
         self.main_window = None
@@ -12,6 +13,7 @@ class UserTUI(object):
         self.line_max = 20
         self.win_offset_x = 2
         self.win_offset_y = 1
+        self.msg_box_offset_x = 4
         return
     
     def Start(self):
@@ -21,7 +23,8 @@ class UserTUI(object):
         curses.noecho()
         curses.cbreak()
         self.main_window.keypad(True)
-        self.Redraw()
+        self.Redraw(False)
+        self.main_window.move(self.message_box_y, self.msg_box_offset_x)
     
     def End(self):
         """End the curses TUI"""
@@ -34,24 +37,10 @@ class UserTUI(object):
         curses.endwin()
         return
     
-    def ExternalMessageLines(self):
-        """Get the number of lines from external messages"""
-        lines = 0
-        for msg in self.ext_messages:
-            lines += msg.count('\n') + 1
-        return lines
-    
-    def ExternalMessageAppend(self, message):
-        """Draw a received message onto the user board"""
-        #TODO overflow prevention
-        self.ext_messages.append(message)
-
-        lines = self.ExternalMessageLines()
-        while lines > self.line_max:   
-            self.ext_messages.pop(0)
-            lines = self.ExternalMessageLines()
-        
+    def DrawMessages(self):
+        """Draw all received messages into the message box"""
         # Redraw region with messages
+        oY, oX = self.main_window.getyx()
         height, width = self.main_window.getmaxyx()
         y, x = (self.win_offset_y + 1, self.win_offset_x + 1)
         y0, x0 = (y, x)
@@ -82,6 +71,43 @@ class UserTUI(object):
             x = x0
             y += 1
         
+        self.main_window.move(oY, oX)
+        return
+    
+    def MoveEdge(self, start):
+        """Move the cursor to the edge of the message"""
+        y, x = self.main_window.getyx()
+        if start:
+            self.main_window.move(y, self.msg_box_offset_x)
+        else:
+            self.main_window.move(y, self.msg_box_offset_x + len(self.message))
+        return
+    
+    def Move(self, left):
+        """Move the cursor around the the message"""
+        y, x = self.main_window.getyx()
+        x += -1 if left else 1
+        self.main_window.move(y, x)
+        return
+
+    def ExternalMessageLines(self):
+        """Get the number of lines from external messages"""
+        lines = 0
+        for msg in self.ext_messages:
+            lines += msg.count('\n') + 1
+        return lines
+    
+    def ExternalMessageAppend(self, message):
+        """Draw a received message onto the user board"""
+        #TODO overflow prevention
+        self.ext_messages.append(message)
+
+        lines = self.ExternalMessageLines()
+        while lines > self.line_max:   
+            self.ext_messages.pop(0)
+            lines = self.ExternalMessageLines()
+        
+        self.DrawMessages()
         self.main_window.refresh()
         return
 
@@ -92,8 +118,9 @@ class UserTUI(object):
         self.message_box_x = 2 * width/3
         return
 
-    def Redraw(self):
+    def Redraw(self, refresh=True):
         """Redraw the TUI elements"""
+        y0, x0 = self.main_window.getyx()
         height, width = self.main_window.getmaxyx()
         self.UpdateDims()
         self.main_window.clear()
@@ -119,10 +146,10 @@ class UserTUI(object):
             width - 3
             )
         
-        lineY, lineX = self.GetMessageOffset()
-        self.main_window.move(self.message_box_y + lineY, 4 + lineX + 1)
-        #TODO redraw existing context here (user message, users, message history)
-        self.main_window.refresh()
+        self.DrawMessages()
+        self.DrawMessage()
+        self.main_window.move(y0, x0)
+        if refresh: self.main_window.refresh()
         return
     
     def GetMessageOffset(self):
@@ -135,17 +162,28 @@ class UserTUI(object):
         """Get the message from the message box"""
         return ''.join([chr(x) for x in self.message])
     
+    def DrawMessage(self):
+        """Draw the message in the message box"""
+        height, width = self.main_window.getmaxyx()
+        x = self.msg_box_offset_x
+        y = self.message_box_y
+        
+        for m in self.message:
+            self.main_window.addch(self.message_box_y, x, m)
+            x += 1
+        return
+    
     def MessageAppend(self, intchar):
         """Add a character to the message box"""
-        #TODO overflow prevention
-        height, width = self.main_window.getmaxyx()
-        lineY, lineX = self.GetMessageOffset()
-        self.main_window.addch(
-            self.message_box_y + lineY,
-            4 + lineX,
-            intchar
-            )
-        self.message.append(intchar)
+        # TODO overflow prevention
+        y, x = self.main_window.getyx()
+        y0, x0 = (y, x)
+        x -= self.msg_box_offset_x
+        x = min(len(self.message), x) # Clamp
+        x = max(x, 0)
+        self.message.insert(x, intchar) # Insert at the cursor position
+        self.DrawMessage()
+        self.main_window.move(y0, x0 + 1)
         self.main_window.refresh()
         return
     

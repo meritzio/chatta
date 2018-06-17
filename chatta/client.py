@@ -39,6 +39,36 @@ class ChattaClient(common.ChattaBase):
 
         return
 
+    def UserLoop(self):
+        """The user key capture loop"""
+        while True:
+            key = self.tui.main_window.getch()
+            if key == 27:
+                self.socket.Close()
+                self.msocket.Close()
+                break # Break on escape key
+            elif key == curses.KEY_ENTER or key == 10 or key == 13:
+                self.Send(self.BasicMsg + ' ' + self.tui.GetMessage())
+                self.tui.MessageClear()
+            elif key == curses.KEY_RESIZE:
+                self.tui.Redraw()
+            elif key == curses.erasechar() or key == 8 or key == 263: # Note backspace value varation beween shells
+                self.tui.MessageClearOne()
+            elif key == curses.KEY_HOME or key == curses.KEY_END:
+                self.tui.MoveEdge(key == curses.KEY_HOME)
+            elif key == curses.KEY_LEFT or key == curses.KEY_RIGHT:
+                self.tui.Move(key == curses.KEY_LEFT)
+            elif key == curses.KEY_UP or key == curses.KEY_DOWN:
+                y, x = self.tui.main_window.getyx()
+                # TODO swap cursor between windows
+            else:
+                try:
+                    chr(key).encode('utf-8') # Check in utf-8 range by parsing
+                    self.tui.MessageAppend(key) 
+                except UnicodeEncodeError:
+                    continue
+        return
+
     def Run(self):
         """Start the client application"""
         
@@ -64,23 +94,7 @@ class ChattaClient(common.ChattaBase):
                 self.msocket.SendSecure(self.EventLine + ' ' + guid)
                 t = threading.Thread(target=self.EventLoop)
                 t.start()
-                
-                while True:
-                    key = self.tui.main_window.getch()
-                    if key == 27:
-                        self.socket.Close()
-                        self.msocket.Close()
-                        break #Break on escape key
-                    elif key == curses.KEY_ENTER or key == 10 or key == 13:
-                        self.Send(self.BasicMsg + ' ' + self.tui.GetMessage())
-                        self.tui.MessageClear()
-                    elif key == curses.KEY_RESIZE:
-                        self.tui.Redraw()
-                    elif key == curses.erasechar() or key == 8: # Note backspace value varation beween shells
-                        self.tui.MessageClearOne()
-                    else:
-                        self.tui.MessageAppend(key) 
-            
+                self.UserLoop()    
             else:
                 self.socket.Close()
         
@@ -93,7 +107,6 @@ class ChattaClient(common.ChattaBase):
 
 def Main():
     """Entry point for the application"""
-    
     try:
         global tui, curses
         import tui, curses
